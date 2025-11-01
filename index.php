@@ -50,6 +50,7 @@ $user_ip = get_ip_address();
             margin: 0;
             padding: 20px;
             padding-top: 100px;
+            padding-bottom: 20px;
             position: relative;
             overflow-x: hidden;
         }
@@ -303,13 +304,62 @@ $user_ip = get_ip_address();
                 transform: scale(1.05);
             }
         }
+
+        .footer {
+            margin-top: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15),
+                        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            font-size: 0.9em;
+            color: #666;
+            animation: slideUp 0.6s ease-out;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .footer a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .footer a:hover::after {
+            width: 100%;
+        }
+
+        .footer a:hover {
+            color: #764ba2;
+        }
+
+        @media (max-width: 768px) {
+            .footer {
+                font-size: 0.8em;
+                padding: 10px 18px;
+                margin-top: 30px;
+            }
+        }
     </style>
 <!--    <link rel="icon" href="./votrefavicon.ico" type="image/x-icon"> -->
 </head>
 <body>
     <nav class="navbar">
         <a href="./" class="active"><span>Mon IP</span></a>
-        <a href="lookup.php"><span>Recherche IP</span></a>
+        <a href="lookup"><span>Recherche IP</span></a>
     </nav>
     
     <div class="container">
@@ -362,5 +412,9 @@ $user_ip = get_ip_address();
             }
         });
     </script>
+
+    <footer class="footer">
+        Made by <a href="https://github.com/Harry4567/ipchecker/" target="_blank">IPChecker</a>
+    </footer>
 </body>
 </html>
