@@ -304,7 +304,7 @@ $user_ip = get_ip_address();
             }
         }
     </style>
-    <link rel="icon" href="./votrefavicon.ico" type="image/x-icon">
+<!--    <link rel="icon" href="./votrefavicon.ico" type="image/x-icon"> -->
 </head>
 <body>
     <nav class="navbar">
