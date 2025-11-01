@@ -304,12 +304,12 @@ $user_ip = get_ip_address();
             }
         }
     </style>
-    <link rel="icon" href="./ipchecker.png" type="image/x-icon">
+    <link rel="icon" href="./votrefavicon.ico" type="image/x-icon">
 </head>
 <body>
     <nav class="navbar">
         <a href="./" class="active"><span>Mon IP</span></a>
-        <a href="lookup"><span>Recherche IP</span></a>
+        <a href="lookup.php"><span>Recherche IP</span></a>
     </nav>
     
     <div class="container">
