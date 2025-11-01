@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Géolocalisation IP avec Carte</title>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            color: #333;
+            padding: 20px;
+            padding-top: 100px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+                        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            z-index: 1000;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .navbar a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1em;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .navbar a::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            transform: translate(-50%, -50%);
+            transition: width 0.4s, height 0.4s;
+        }
+
+        .navbar a:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        .navbar a:hover {
+            color: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .navbar a.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .navbar a span {
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 12px 20px;
+                gap: 10px;
+                top: 10px;
+            }
+
+            .navbar a {
+                font-size: 0.9em;
+                padding: 8px 15px;
+            }
+
+            body {
+                padding-top: 90px;
+            }
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .container { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 50px 40px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 
+                        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            width: 100%; 
+            max-width: 700px; 
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 40px; 
+            font-size: 2.5em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        #ip-form { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+
+        #ip-input { 
+            padding: 18px 24px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 12px; 
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            font-family: inherit;
+        }
+
+        #ip-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        #ip-input::placeholder {
+            color: #999;
+        }
+
+        #lookup-btn { 
+            padding: 18px 32px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #lookup-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        #lookup-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        #lookup-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        #lookup-btn:active {
+            transform: translateY(0);
+        }
+
+        #lookup-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        #results { 
+            text-align: left; 
+            padding: 25px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 16px; 
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            min-height: 80px; 
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        #results:hover {
+            border-color: #667eea;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.1);
+        }
+
+        #results h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .result-item { 
+            margin-bottom: 12px; 
+            font-size: 1em;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s ease;
+        }
+
+        .result-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-item strong { 
+            color: #764ba2; 
+            display: inline-block; 
+            width: 140px; 
+            font-weight: 600;
+        }
+
+        .error { 
+            color: #e74c3c; 
+            font-weight: 600;
+            padding: 15px;
+            background: #fee;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        /* Style pour la carte */
+        #map { 
+            height: 400px;
+            width: 100%;
+            border-radius: 16px;
+            margin-top: 30px;
+            border: 2px solid #e0e0e0;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #map:hover {
+            border-color: #667eea;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            #ip-input, #lookup-btn {
+                font-size: 1em;
+                padding: 15px 20px;
+            }
+
+            .result-item strong {
+                display: block;
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            #map {
+                height: 300px;
+            }
+        }
+    </style>
+    <link rel="icon" href="./ipchecker.png" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="./"><span>Mon IP</span></a>
+        <a href="lookup" class="active"><span>Recherche IP</span></a>
+    </nav>
+    
+    <div class="container">
+        <h1>Localiser une Adresse IP</h1>
+        
+        <form id="ip-form">
+            <input type="text" id="ip-input" placeholder="Entrez une adresse IP (ex: 8.8.8.8)" required>
+            <button type="submit" id="lookup-btn"><span>Rechercher la Localisation</span></button>
+        </form>
+
+        <div id="results">
+            Entrez une IP et cliquez sur Rechercher.
+        </div>
+
+        <div id="map"></div> </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Initialisation de la carte (ne pas la centrer tout de suite)
+        let map = null; // Variable pour stocker l'instance de la carte
+        let marker = null; // Variable pour stocker le marqueur
+
+        function initMap() {
+            if (map !== null) {
+                map.remove(); // Supprime l'ancienne instance de carte si elle existe
+            }
+            map = L.map('map').setView([0, 0], 1); // Centré sur (0,0) avec un zoom faible
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        }
+
+        // Appeler initMap une première fois pour initialiser une carte vide
+        document.addEventListener('DOMContentLoaded', initMap);
+
+        document.getElementById('ip-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const ipInput = document.getElementById('ip-input');
+            const resultsDiv = document.getElementById('results');
+            const ipAddress = ipInput.value.trim();
+
+            resultsDiv.innerHTML = 'Chargement de la localisation...';
+            
+            const formData = new FormData();
+            formData.append('ip', ipAddress);
+            
+            try {
+                const response = await fetch('iplookup.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur serveur : ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = '<h2>Résultats pour ' + data.location.IP + ' :</h2>';
+                    for (const key in data.location) {
+                        if (data.location.hasOwnProperty(key)) {
+                            if (key !== 'IP' && key !== 'Latitude' && key !== 'Longitude') { // N'affiche pas Lat/Lon dans les résultats textuels
+                                html += `<div class="result-item"><strong>${key} :</strong> ${data.location[key]}</div>`;
+                            }
+                        }
+                    }
+                    resultsDiv.innerHTML = html;
+
+                    // --- Mise à jour de la carte ---
+                    const lat = data.location.Latitude;
+                    const lon = data.location.Longitude;
+
+                    if (lat && lon) {
+                        const newLatLng = new L.LatLng(lat, lon);
+                        
+                        // Si la carte n'est pas encore initialisée, le faire
+                        if (map === null) {
+                            initMap();
+                        }
+                        
+                        // Centrer la carte sur la nouvelle position et ajuster le zoom
+                        map.setView(newLatLng, 13); // Zoom 13 est un bon niveau pour une ville
+
+                        // Supprimer l'ancien marqueur si présent
+                        if (marker !== null) {
+                            map.removeLayer(marker);
+                        }
+
+                        // Ajouter un nouveau marqueur
+                        marker = L.marker(newLatLng).addTo(map)
+                            .bindPopup(`<b>${data.location.Ville}</b><br>${data.location.Pays}`).openPopup();
+                    } else {
+                        resultsDiv.innerHTML += `<div class="error">Impossible d'obtenir les coordonnées pour la carte.</div>`;
+                        if (marker !== null) { // Supprimer le marqueur si les coordonnées ne sont plus disponibles
+                            map.removeLayer(marker);
+                            marker = null;
+                        }
+                        map.setView([0, 0], 1); // Recentrer sur le monde
+                    }
+
+                } else if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">Erreur : ${data.error}</div>`;
+                    if (marker !== null) { // En cas d'erreur, supprimer le marqueur
+                        map.removeLayer(marker);
+                        marker = null;
+                    }
+                    map.setView([0, 0], 1); // Recentrer sur le monde
+                }
+                
+            } catch (error) {
+                console.error('Erreur AJAX ou réseau:', error);
+                resultsDiv.innerHTML = `<div class="error">Une erreur de communication est survenue. Vérifiez la console.</div>`;
+                if (marker !== null) { // En cas d'erreur, supprimer le marqueur
+                    map.removeLayer(marker);
+                    marker = null;
+                }
+                map.setView([0, 0], 1); // Recentrer sur le monde
+            }
+        });
+    </script>
+</body>
+</html>
